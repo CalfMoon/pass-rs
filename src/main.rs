@@ -1,24 +1,39 @@
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-
-use clap::Parser;
 
 /// A simple password manager written in rust
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
-    /// Add a new password
-    #[arg(short, long)]
-    new: Option<String>,
+struct Arg {
+    #[clap(flatten)]
+    options: Options,
 
-    /// Add a new password
-    #[arg(short, long)]
-    read: Option<String>,
+    #[clap(subcommand)]
+    subcommand: SubCommand,
+}
 
-    /// Inatilize a password diretory
-    #[arg(long, value_name = "Path")]
-    init: Option<PathBuf>,
+#[derive(Parser, Debug)]
+struct Options {}
+
+#[derive(Debug, Subcommand, Clone)]
+enum SubCommand {
+    /// add a new password
+    New { name: String },
+
+    /// read a existing password
+    Read { name: String },
+
+    /// inatilize a new password store
+    Init {
+        /// pgp key to use
+        gpg_id: String,
+
+        /// where the password-store is inisialized
+        #[arg(long, short)]
+        path: Option<PathBuf>,
+    },
 }
 
 fn main() {
-    let args = Args::parse();
+    let args = Arg::parse();
 }
