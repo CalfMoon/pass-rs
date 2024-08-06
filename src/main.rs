@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::{fs, io, path::PathBuf};
 
 /// A simple password manager written in rust
 #[derive(Parser, Debug)]
@@ -35,18 +35,22 @@ enum SubCommand {
 }
 
 impl Arg {
-    fn get_path(&self) -> PathBuf {
+    fn get_path(&self) -> Result<PathBuf, io::Error> {
         let mut return_path = PathBuf::new();
 
         if let SubCommand::Init { gpg_id: _, path } = &self.subcommand {
             match path {
-                Some(x) => return_path.push(x),
-                None => return_path.push("~/.local/share/"),
+                Some(x) => {
+                    return_path.push(x);
+                    if !return_path.try_exists()? {
+                        fs::create_dir_all(&return_path)?;
+                    }
+                }
+                None => return_path.push("~/.local/share/rs-passstore"),
             }
         };
 
-        return_path.push("rs-passstore");
-        return_path
+        Ok(return_path)
     }
 }
 
