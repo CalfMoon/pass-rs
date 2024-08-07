@@ -43,11 +43,11 @@ enum SubCommand {
     },
 }
 
-impl Arg {
+impl SubCommand {
     fn get_store_path(&self) -> Result<PathBuf, io::Error> {
         let mut return_path = PathBuf::new();
 
-        if let SubCommand::Init { gpg_id: _, path } = &self.subcommand {
+        if let SubCommand::Init { gpg_id: _, path } = &self {
             match path {
                 Some(x) => {
                     return_path.push(x);
@@ -62,7 +62,7 @@ impl Arg {
         Ok(return_path)
     }
 
-    fn write_to_config(&self, data: Config) -> Result<(), Box<dyn Error>> {
+    fn write_config(&self, data: Config) -> Result<(), Box<dyn Error>> {
         let mut config_directory = PathBuf::from(if let Ok(x) = env::var("XDG_CONFIG_HOME") {
             x
         } else {
@@ -80,17 +80,18 @@ impl Arg {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Config {
     store_path: PathBuf,
 }
 
 fn main() {
     let args = Arg::parse();
-    match args.subcommand {
+    let subcommand = args.subcommand;
+    match subcommand {
         SubCommand::Init { gpg_id: _, path: _ } => {
-            let store_path = args.get_store_path().unwrap();
-            args.write_to_config(Config { store_path }).unwrap();
+            let store_path = subcommand.get_store_path().unwrap();
+            subcommand.write_config(Config { store_path }).unwrap();
         }
         SubCommand::New { name: _ } => {}
         SubCommand::Read { name: _ } => {}
