@@ -55,10 +55,16 @@ impl SubCommand {
                         fs::create_dir_all(&return_path)?;
                     }
                 }
-                None => return_path.push("~/.local/share/rs-passstore"),
+                None => {
+                    return_path = PathBuf::from(if let Ok(x) = env::var("XDG_DATA_HOME") {
+                        x
+                    } else {
+                        "~/.local/share/".to_string()
+                    });
+                    return_path.push("rs-passstore");
+                }
             }
-        };
-
+        }
         Ok(return_path)
     }
 
