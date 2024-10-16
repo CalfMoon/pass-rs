@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use toml;
 
@@ -8,6 +9,7 @@ use std::{
     fs,
     io::{self, Write},
     path::PathBuf,
+    process,
 };
 
 /// A simple password manager written in rust
@@ -60,6 +62,27 @@ impl SubCommand {
         };
 
         Ok(return_path)
+    }
+
+    fn get_gpg(&self) -> Result<String, io::Error> {
+        if let SubCommand::Init { gpg_id, path: _ } = &self {
+            let output = String::from_utf8(
+                process::Command::new("gpg")
+                    .args(["--list-secret-keys", "--keyid-format", "LONG", gpg_id])
+                    .output()?
+                    .stdout,
+            )
+            .unwrap();
+
+            let regex = Regex::new(r".*\/(?<id>[A-Z0-9]+)[0-9- ]{12}\[E\]").unwrap();
+            if let Some(key_id) = &regex.captures(&output) {
+                println!("{}", key_id["id"].to_string());
+                return Ok(key_id["id"].to_string());
+            } else {
+                return Ok(gpg_id.clone());
+            };
+        }
+        unreachable!()
     }
 
     fn write_config(&self, data: Config) -> Result<(), Box<dyn Error>> {
