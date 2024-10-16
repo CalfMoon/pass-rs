@@ -104,6 +104,7 @@ impl SubCommand {
 #[derive(Serialize, Deserialize, Debug)]
 struct Config {
     store_path: PathBuf,
+    gpg_id: String,
 }
 
 fn main() {
@@ -112,7 +113,10 @@ fn main() {
     match subcommand {
         SubCommand::Init { gpg_id: _, path: _ } => {
             let store_path = subcommand.get_store_path().unwrap();
-            subcommand.write_config(Config { store_path }).unwrap();
+            let gpg_id = subcommand.get_gpg().unwrap();
+            subcommand
+                .write_config(Config { store_path, gpg_id })
+                .unwrap();
         }
         SubCommand::New { name: _ } => {}
         SubCommand::Read { name: _ } => {}
