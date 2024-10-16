@@ -92,7 +92,7 @@ impl SubCommand {
         config_directory.push("pass-rs");
 
         fs::create_dir_all(&config_directory)?;
-        let mut file = fs::File::create(config_directory.join("config.json"))?;
+        let mut file = fs::File::create(config_directory.join("config.toml"))?;
 
         let dat = toml::to_string(&data).unwrap();
 
