@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 use toml;
 
 use std::{
-    env,
-    error::Error,
-    fs,
+    env, fs,
     io::{self, Write},
     path::PathBuf,
     process,
@@ -85,7 +83,7 @@ impl SubCommand {
         unreachable!()
     }
 
-    fn write_config(&self, data: Config) -> Result<(), Box<dyn Error>> {
+    fn write_config(&self, data: Config) -> Result<(), io::Error> {
         let mut config_directory = PathBuf::from(if let Ok(x) = env::var("XDG_CONFIG_HOME") {
             x
         } else {
@@ -96,7 +94,7 @@ impl SubCommand {
         fs::create_dir_all(&config_directory)?;
         let mut file = fs::File::create(config_directory.join("config.json"))?;
 
-        let dat = toml::to_string(&data)?;
+        let dat = toml::to_string(&data).unwrap();
 
         file.write(dat.as_bytes())?;
         Ok(())
