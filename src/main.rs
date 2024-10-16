@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 use toml;
 
 use std::{
-    env, fs,
-    io::{self, Write},
+    env,
+    error::Error,
+    fs,
+    io::{self, Read, Write},
     path::PathBuf,
     process,
 };
@@ -100,10 +102,22 @@ impl SubCommand {
         fs::create_dir_all(&config_directory)?;
         let mut file = fs::File::create(config_directory.join("config.toml"))?;
 
-        let dat = toml::to_string(&data).unwrap();
+        let data_string = toml::to_string(&data).unwrap();
 
-        file.write(dat.as_bytes())?;
+        file.write(data_string.as_bytes())?;
         Ok(())
+    }
+
+    fn read_config(&self) -> Result<Config, Box<dyn Error>> {
+        let config_directory = PathBuf::from(if let Ok(x) = env::var("XDG_CONFIG_HOME") {
+            x
+        } else {
+            "~/.config/".to_string()
+        });
+        let data_string = fs::read_to_string(config_directory.join("pass-rs/config.toml"))?;
+        let data: Config = toml::from_str(&data_string)?;
+
+        Ok(data)
     }
 }
 
