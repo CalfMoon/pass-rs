@@ -118,22 +118,42 @@ impl SubCommand {
         Ok(data)
     }
 
-    fn register_password(&self) -> String {
+    fn register_password(&self) -> Result<String, io::Error> {
         let mut password1 = String::new();
         let mut password2 = String::new();
         if let SubCommand::New { name } = &self {
             println!("Enter password for {}: ", name);
-            io::stdin().read_line(&mut password1).unwrap();
+            io::stdin().read_line(&mut password1)?;
 
             println!("Retype password for {}: ", name);
-            io::stdin().read_line(&mut password2).unwrap();
+            io::stdin().read_line(&mut password2)?;
 
             if password1 != password2 {
                 eprintln!("The passwords don't match!");
                 std::process::exit(-1);
             }
         }
-        return password1;
+        password1.pop();
+        return Ok(password1);
+    }
+
+    fn write_password(
+        &self,
+        password: String,
+        path: String,
+        gpg_id: String,
+    ) -> Result<(), io::Error> {
+        let cmd_echo = process::Command::new("echo")
+            .arg(password)
+            .stdout(Stdio::piped())
+            .spawn()?;
+
+        process::Command::new("gpg")
+            .args(["-e", "-r", &gpg_id, "-o", &path])
+            .stdin(cmd_echo.stdout.unwrap())
+            .spawn()?;
+
+        return Ok(());
     }
 }
 
@@ -156,7 +176,15 @@ fn main() {
         }
 
         SubCommand::New { name } => {
-            let password = subcommand.register_password();
+            let password = subcommand.register_password().unwrap();
+            let Config { store_path, gpg_id } = subcommand.read_config().unwrap();
+            subcommand
+                .write_password(
+                    password,
+                    String::from(store_path.join(name.clone() + ".gpg").to_string_lossy()),
+                    gpg_id,
+                )
+                .unwrap()
         }
         SubCommand::Read { name: _ } => {}
     }
