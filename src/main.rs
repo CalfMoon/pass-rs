@@ -7,9 +7,9 @@ use std::{
     env,
     error::Error,
     fs,
-    io::{self, Read, Write},
+    io::{self, Write},
     path::PathBuf,
-    process,
+    process::{self, Stdio},
 };
 
 /// A simple password manager written in rust
@@ -82,7 +82,6 @@ impl SubCommand {
 
             let regex = Regex::new(r".*\/(?<id>[A-Z0-9]+)[0-9- ]{12}\[E\]").unwrap();
             if let Some(key_id) = &regex.captures(&output) {
-                println!("{}", key_id["id"].to_string());
                 return Ok(key_id["id"].to_string());
             } else {
                 return Ok(gpg_id.clone());
@@ -103,7 +102,6 @@ impl SubCommand {
         let mut file = fs::File::create(config_directory.join("config.toml"))?;
 
         let data_string = toml::to_string(&data).unwrap();
-
         file.write(data_string.as_bytes())?;
         Ok(())
     }
@@ -119,6 +117,24 @@ impl SubCommand {
 
         Ok(data)
     }
+
+    fn register_password(&self) -> String {
+        let mut password1 = String::new();
+        let mut password2 = String::new();
+        if let SubCommand::New { name } = &self {
+            println!("Enter password for {}: ", name);
+            io::stdin().read_line(&mut password1).unwrap();
+
+            println!("Retype password for {}: ", name);
+            io::stdin().read_line(&mut password2).unwrap();
+
+            if password1 != password2 {
+                eprintln!("The passwords don't match!");
+                std::process::exit(-1);
+            }
+        }
+        return password1;
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -130,7 +146,7 @@ struct Config {
 fn main() {
     let args = Arg::parse();
     let subcommand = args.subcommand;
-    match subcommand {
+    match &subcommand {
         SubCommand::Init { gpg_id: _, path: _ } => {
             let store_path = subcommand.get_store_path().unwrap();
             let gpg_id = subcommand.get_gpg().unwrap();
@@ -138,7 +154,10 @@ fn main() {
                 .write_config(Config { store_path, gpg_id })
                 .unwrap();
         }
-        SubCommand::New { name: _ } => {}
+
+        SubCommand::New { name } => {
+            let password = subcommand.register_password();
+        }
         SubCommand::Read { name: _ } => {}
     }
 }
