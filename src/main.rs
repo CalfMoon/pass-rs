@@ -9,7 +9,7 @@ use std::{
     fs,
     io::{self, Write},
     path::PathBuf,
-    process::{self, Stdio},
+    process::{Command, Stdio},
 };
 
 /// A simple password manager written in rust
@@ -73,7 +73,7 @@ impl SubCommand {
     fn get_gpg(&self) -> Result<String, io::Error> {
         if let SubCommand::Init { gpg_id, path: _ } = &self {
             let output = String::from_utf8(
-                process::Command::new("gpg")
+                Command::new("gpg")
                     .args(["--list-secret-keys", "--keyid-format", "LONG", gpg_id])
                     .output()?
                     .stdout,
@@ -143,12 +143,12 @@ impl SubCommand {
         path: String,
         gpg_id: String,
     ) -> Result<(), io::Error> {
-        let cmd_echo = process::Command::new("echo")
+        let cmd_echo = Command::new("echo")
             .arg(password)
             .stdout(Stdio::piped())
             .spawn()?;
 
-        process::Command::new("gpg")
+        Command::new("gpg")
             .args(["-e", "-r", &gpg_id, "-o", &path])
             .stdin(cmd_echo.stdout.unwrap())
             .spawn()?;
