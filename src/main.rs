@@ -118,7 +118,7 @@ impl SubCommand {
         Ok(data)
     }
 
-    fn register_password(&self) -> Result<String, io::Error> {
+    fn get_password(&self) -> Result<String, io::Error> {
         let mut password1 = String::new();
         let mut password2 = String::new();
         if let SubCommand::New { name } = &self {
@@ -155,6 +155,12 @@ impl SubCommand {
 
         return Ok(());
     }
+
+    fn read_password(&self, path: String) -> Result<String, io::Error> {
+        let output = Command::new("gpg").args(["-d", &path]).output()?.stdout;
+
+        return Ok(String::from_utf8(output).unwrap());
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -176,7 +182,7 @@ fn main() {
         }
 
         SubCommand::New { name } => {
-            let password = subcommand.register_password().unwrap();
+            let password = subcommand.get_password().unwrap();
             let Config { store_path, gpg_id } = subcommand.read_config().unwrap();
             subcommand
                 .write_password(
@@ -186,6 +192,18 @@ fn main() {
                 )
                 .unwrap()
         }
-        SubCommand::Read { name: _ } => {}
+
+        SubCommand::Read { name } => {
+            let Config {
+                store_path,
+                gpg_id: _,
+            } = subcommand.read_config().unwrap();
+
+            let password = subcommand
+                .read_password(String::from(
+                    store_path.join(name.clone() + ".gpg").to_string_lossy(),
+                ))
+                .unwrap();
+        }
     }
 }
