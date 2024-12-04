@@ -32,7 +32,13 @@ enum SubCommand {
     New { name: String },
 
     /// read a existing password
-    Read { name: String },
+    Read {
+        name: String,
+
+        /// copy password into clipboard
+        #[arg(long, short)]
+        copy: bool,
+    },
 
     /// inatilize a new password store
     Init {
@@ -193,7 +199,7 @@ fn main() {
                 .unwrap()
         }
 
-        SubCommand::Read { name } => {
+        SubCommand::Read { name, copy } => {
             let Config {
                 store_path,
                 gpg_id: _,
@@ -204,6 +210,14 @@ fn main() {
                     store_path.join(name.clone() + ".gpg").to_string_lossy(),
                 ))
                 .unwrap();
+
+            if *copy {
+                use arboard::Clipboard;
+                let mut clipboard = Clipboard::new().unwrap();
+                clipboard.set_text(password).unwrap();
+            } else {
+                println!("{password}");
+            }
         }
     }
 }
