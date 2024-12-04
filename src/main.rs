@@ -138,6 +138,11 @@ impl SubCommand {
                 eprintln!("The passwords don't match!");
                 std::process::exit(-1);
             }
+
+            if password1 == "\n" {
+                eprintln!("The passwords can't be empty");
+                std::process::exit(-1);
+            }
         }
         password1.pop();
         return Ok(password1);
