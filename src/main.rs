@@ -128,10 +128,12 @@ impl SubCommand {
         let mut password1 = String::new();
         let mut password2 = String::new();
         if let SubCommand::New { name } = &self {
-            println!("Enter password for {}: ", name);
+            print!("Enter password for {}: ", name);
+            io::stdout().flush().unwrap();
             io::stdin().read_line(&mut password1)?;
 
-            println!("Retype password for {}: ", name);
+            print!("Retype password for {}: ", name);
+            io::stdout().flush().unwrap();
             io::stdin().read_line(&mut password2)?;
 
             if password1 != password2 {
